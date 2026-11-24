@@ -16,6 +16,7 @@ def test_parallel_rerun_commits_single_row(store, clean):
         results = list(threads.map(lambda _: load(), range(4)))
     assert all(result == results[0] for result in results)
     assert len(store.list()) == 1
+    assert results[0]["report"]["lineage"]["parent"] is None
 
 
 def test_parallel_review_has_one_winner(store, dirty):
@@ -35,3 +36,24 @@ def test_parallel_review_has_one_winner(store, dirty):
         results = list(threads.map(attempt, ["来源待检查", "分组待处理"]))
     assert sorted(results) == ["HELD", "STALE_REVIEW"]
     assert store.load(run["id"])["revision"] == 1
+
+
+def test_parallel_updates_never_chain_to_themselves(store, clean):
+    execute(store, clean)
+    edited = clean.replace(
+        b"000202,0002,touch,70,3,1,0,0",
+        b"000202,0002,touch,71,3,1,0,0",
+    )
+    start = Barrier(3)
+
+    def load():
+        start.wait(3)
+        return execute(store, edited)
+
+    with ThreadPoolExecutor(max_workers=3) as threads:
+        results = list(threads.map(lambda _: load(), range(3)))
+    parent = results[0]["report"]["manifest"]["parent"]
+    assert {result["id"] for result in results} == {results[0]["id"]}
+    assert parent is not None and parent != results[0]["id"]
+    chain = store.versions(results[0]["id"])
+    assert len(chain) == 2 and chain[1]["id"] == parent

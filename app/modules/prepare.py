@@ -1,19 +1,43 @@
-from app.business import DomainIssue, by_kind, prepared, single
+"""触点筛选：只保留同意标志为 1 且落在回溯窗口内的触点。"""
+
+from app.business import by_kind, prepared, single
 
 
 def prepare(rows):
     event = single(rows, "conversion")
     target = single(rows, "expected")["value_cents"]
-    t = event["minute"]
-    valid = [
-        r
-        for r in by_kind(rows, "touch")
-        if r["consent"] == 1 and t - event["lookback"] <= r["minute"] < t
+    minute = event["minute"]
+    start = minute - event["lookback"]
+    touches = sorted(
+        by_kind(rows, "touch"), key=lambda row: (row["minute"], row["record"])
+    )
+    eligible = [
+        row
+        for row in touches
+        if row["consent"] == 1 and start <= row["minute"] < minute
     ]
-    if not valid:
-        raise DomainIssue("NO_TOUCH")
+    details = {
+        "conversion_min": minute,
+        "lookback_min": event["lookback"],
+        "window": {
+            "start": start,
+            "end": minute,
+            "start_inclusive": True,
+            "end_exclusive": True,
+        },
+        "eligible_records": [row["record"] for row in eligible],
+        "participating_records": [
+            row["record"] for row in eligible if row["channel"] != 0
+        ],
+        "direct_records": [row["record"] for row in eligible if row["channel"] == 0],
+    }
     return prepared(
-        len(valid),
-        {"conversion_min": t, "lookback_min": event["lookback"]},
-        (event, valid, target),
+        len(eligible),
+        details,
+        {
+            "event": event,
+            "target": target,
+            "touches": touches,
+            "eligible": eligible,
+        },
     )

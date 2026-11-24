@@ -29,15 +29,20 @@ def runs():
 def batch(run_id):
     store = current_app.extensions["runs"]
     if request.method == "GET":
-        return jsonify(store.load(run_id))
-    return jsonify(review(store, run_id, request.get_json(silent=True)))
+        payload = store.load(run_id)
+        payload["versions"] = store.versions(run_id)
+        return jsonify(payload)
+    payload = review(store, run_id, request.get_json(silent=True))
+    payload["versions"] = store.versions(run_id)
+    return jsonify(payload)
 
 
 @api.get("/runs/<run_id>/evidence")
 def export(run_id):
-    report = current_app.extensions["runs"].load(run_id)
+    store = current_app.extensions["runs"]
+    report = store.load(run_id)
     return Response(
-        artifact(report),
+        artifact(report, store.versions(run_id)),
         mimetype="application/json",
         headers={
             "Content-Disposition": f'attachment; filename="review-{report["id"][:12]}.json"',

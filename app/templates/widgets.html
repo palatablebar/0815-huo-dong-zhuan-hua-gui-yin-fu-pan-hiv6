@@ -23,6 +23,12 @@
 {% macro results() %}
 <section class="panel results" aria-labelledby="panel-title">
   <div class="panel-head"><h2 id="panel-title">运行对账</h2><span id="counts"></span></div>
+  <div class="tabs" role="tablist" aria-label="账页">
+    <button type="button" data-tab="ledger" aria-pressed="true">归因账</button>
+    <button type="button" data-tab="direct" aria-pressed="false">直达记录</button>
+    <button type="button" data-tab="no_touch" aria-pressed="false">无触点案例</button>
+    <button type="button" data-tab="issues" aria-pressed="false">阻断项</button>
+  </div>
   <div class="scroll"><table id="rows" aria-label="阶段结果"></table></div>
 </section>
 {% endmacro %}

@@ -9,7 +9,9 @@ const status = document.querySelector('#notice');
 const detail = document.querySelector('#review');
 const evidence = document.querySelector('#evidence');
 const stages = [...document.querySelectorAll('[data-stage]')];
+const tabs = [...document.querySelectorAll('[data-tab]')];
 let stage = 'balance';
+let tab = 'ledger';
 let report, selected, batch, running = false;
 
 function source() {
@@ -26,14 +28,19 @@ function announce(text, failure = false) {
 
 function draw() {
   if (!report) return;
-  snapshot(report, selected, stage);
+  snapshot(report, selected, stage, tab);
   visualize(report, selected);
   for (const button of stages) button.setAttribute('aria-pressed',String(button.dataset.stage===stage));
-  document.querySelector('#panel-title').textContent = stages.find(button => button.dataset.stage===stage)?.textContent || '运行对账';
+  for (const button of tabs) button.setAttribute('aria-pressed',String(button.dataset.tab===tab));
   detail.hidden = !batch;
   if (batch) {
-    document.querySelector('#run-status').textContent = `${batch.id.slice(0,10)} · ${batch.status} · r${batch.revision}`;
-    detail.querySelector('[value="APPROVED"]').disabled = !report.balance.releasable || batch.status==='APPROVED';
+    document.querySelector('#run-status').textContent =
+      `${batch.id.slice(0,10)} · ${batch.status} · r${batch.revision}` +
+      (report.lineage?.parent ? ` · 上游 ${report.lineage.parent.slice(0,10)}` : '');
+    detail.querySelector('[value="APPROVED"]').disabled = !report.balance?.releasable || batch.status==='APPROVED';
+    detail.querySelector('[value="APPROVED"]').title = report.balance?.releasable
+      ? '逐条对平且无阻断项，可以签发'
+      : `存在阻断项：${(report.blocking || []).join('、') || '对账未通过'}`;
     detail.querySelector('[value="HELD"]').disabled = batch.status==='APPROVED';
     evidence.href = `/api/runs/${batch.id}/evidence`;
   }
@@ -44,6 +51,7 @@ function show(payload, committed = false) {
   report = committed ? payload.report : payload;
   detail.elements.note.value = batch?.note || '';
   selected = report.cases?.[0]?.case;
+  if (committed && !report.reconciliation) tab = 'ledger';
   draw();
 }
 
@@ -73,11 +81,12 @@ function preview(next) {
 }
 
 stages.forEach(button => button.addEventListener('click',()=>preview(button.dataset.stage)));
+tabs.forEach(button => button.addEventListener('click',()=>{tab = button.dataset.tab; draw();}));
 form.addEventListener('submit', event => {
   event.preventDefault();
   perform(async () => {
     const result = await request('/api/runs',{method:'POST',body:source()});
-    stage = 'balance'; show(result,true);
+    stage = 'balance'; tab = 'ledger'; show(result,true);
     announce('批次已保存'); await refresh();
   });
 });

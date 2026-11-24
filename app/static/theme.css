@@ -33,6 +33,8 @@ body.campaign {margin:0;background:var(--bg);color:var(--ink);font:var(--size)/1
 .campaign th {position:sticky;top:0;background:var(--surface);color:var(--sub)} .campaign td:nth-child(n+2):nth-child(-n+4) {text-align:right}
 .campaign .badge {color:var(--alert);font-size:.83em;padding:2px 4px;white-space:nowrap} .campaign .badge:is([data-result="READY"],[data-result="APPROVED"]) {color:var(--accent)}
 .campaign #detail {margin:0;max-height:230px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font: .91em/1.5 var(--font-num)}
+.campaign .tabs {display:flex;gap:6px;flex-wrap:wrap;margin:0 0 9px}
+.campaign .tabs button {padding:.32em .66em;border-radius:999px}
 .campaign #history {list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:var(--gap);margin:0} .campaign #history li {display:flex;align-items:center}
 .campaign #review {margin-top:14px;max-width:580px} .campaign textarea {display:block;width:100%;min-height:54px;cursor:text}
 .campaign .review-actions {display:flex;gap:6px;margin:8px 0}
@@ -47,6 +49,7 @@ body.campaign {margin:0;background:var(--bg);color:var(--ink);font:var(--size)/1
 @media print { .campaign .source,.campaign .stages,.campaign .archive,.campaign .statusbar {display:none} .campaign .desk {display:block} }
 
 .mark-piece {background:var(--accent);color:var(--surface);min-width:0}
+.campaign .mark-piece {border-radius:999px;padding:2px 8px;width:var(--part,100%);text-align:center}
 
 .touch-scene {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:7px;padding-top:6px}
 .touch-chip,.conversion-chip {background:var(--accent);color:var(--surface);border-radius:999px;padding:8px 10px}
